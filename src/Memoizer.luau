@@ -36,7 +36,7 @@ type function getValueFromSchemaTailUDTF(tail : type) : type
 		if value then
 			return value
 		else
-			error("no value singleton key found in schema's tail of table type")
+			error("No value singleton key found in schema's tail of table type")
 		end
 	else
 		return tail
@@ -58,7 +58,7 @@ type function getTailValueFromSchema(schema : type) : type
 				return getValueFromSchemaTailUDTF(indexer.result)
 			end
 		else
-			error("no indexer found in schema layer")
+			error("No indexer found in schema layer")
 		end
 	end
 end
@@ -87,7 +87,7 @@ export type function fetchingSchema(schema : type) : type
 				break
 			end
 		else
-			error("no indexer found in schema layer")
+			error("No indexer found in schema layer")
 		end
 	end
 
@@ -125,7 +125,7 @@ type function pendingSchema(schema : type) : type
 				break
 			end
 		else
-			error("no indexer found in schema layer")
+			error("No indexer found in schema layer")
 		end
 	end
 
@@ -165,7 +165,7 @@ local function iterateSchema(schema : schemaLayer)
 				
 				return k, v
 			else
-				error("no key value pair found in schema layer")
+				error("No key value pair found in schema layer")
 			end
 		else
 			return nil
@@ -453,7 +453,7 @@ module.Get = function<T>(
 					pendingSchemaTail = nextPendingSchemaLayer :: pendingSchemaTail
 
 					if pendingSchemaTail.initiator == coroutine.running() then
-						error("recursive fetching of the same schema path is not supported")
+						error("Recursive fetching of the same schema path is not supported")
 					end
 				else
 					local newSchema : T = {}
@@ -513,12 +513,12 @@ module.Get = function<T>(
 			if success then
 				return getValueFromSchemaTail(value)
 			else
-				error(`failed to fetch value: {value}`)
+				error(`Failed to fetch value: {value}`)
 			end
 		end
 	end
 
-	error("schema iteration did not return any value")
+	error("Schema iteration did not return any value")
 end
 
 return module
