@@ -1,0 +1,27 @@
+{
+  "name": "@lopjoss/memoizer",
+  "version": "1.3.1",
+  "description": "A typed Luau memoization library with schema-based caching, concurrent request deduplication, configurable retries, and optional cache limits.",
+  "keywords": [
+    "luau",
+    "roblox",
+    "memoization",
+    "cache",
+    "caching"
+  ],
+  "homepage": "https://github.com/lopjoss/Memoizer#readme",
+  "bugs": {
+    "url": "https://github.com/lopjoss/Memoizer/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lopjoss/Memoizer.git"
+  },
+  "license": "UNLICENSED",
+  "author": "lopjoss",
+  "type": "commonjs",
+  "main": "src/Memoizer.luau",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  }
+}
