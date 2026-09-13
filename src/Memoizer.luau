@@ -1,7 +1,7 @@
 --!strict
 
 --[[
-	v1.3.2
+	v1.3.3
 
 	Memoizer implementation by @lopjoss
 
