@@ -1,8 +1,6 @@
 --!strict
 
 --[[
-	v1.3.3
-
 	Memoizer implementation by @lopjoss
 
 	caching a table works by making the schema's tail a dictionary with a key
