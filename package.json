@@ -21,6 +21,9 @@
   "author": "lopjoss",
   "type": "commonjs",
   "main": "src/Memoizer.luau",
+  "files": [
+    "src/Memoizer.luau"
+  ],
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   }
