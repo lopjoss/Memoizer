@@ -1,6 +1,6 @@
 {
   "name": "@lopjoss/memoizer",
-  "version": "1.3.1",
+  "version": "1.3.2",
   "description": "A typed Luau memoization library with schema-based caching, concurrent request deduplication, configurable retries, and optional cache limits.",
   "keywords": [
     "luau",
