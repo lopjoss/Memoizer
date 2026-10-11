@@ -2,8 +2,9 @@
 name = "lopjoss/memoizer"
 description = "A Luau memoization library for Roblox with concurrent request deduplication and configurable caching"
 license = "MIT"
-version = "1.4.3"
+version = "1.4.4"
 registry = "https://github.com/UpliftGames/wally-index"
 realm = "shared"
 include = ["wally.toml", "src", "src/Memoizer.luau"]
 exclude = ["**"]
+build = "wally.project.json"
