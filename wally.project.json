@@ -1,6 +1,0 @@
-{
-    "name": "memoizer",
-    "tree": {
-        "$path": "src/Memoizer.luau"
-    }
-}
