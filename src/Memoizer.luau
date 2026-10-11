@@ -1,6 +1,8 @@
 --!strict
 
 --[[
+	v1.4.1
+
 	Memoizer implementation by @lopjoss
 
 	caching a table works by making the schema's tail a dictionary with a key
@@ -341,7 +343,7 @@ end
 module.ClearCache = function<T>(
 	self : classType<T>
 )
-	self._cache = {}
+	self._cache = {} :: T
 
 	if self._maxCacheRecords then
 		self._keyByLayer = {}
@@ -432,6 +434,8 @@ module.Get = function<T>(
 			local currentPendingSchemaLayer : {[any] : uncertainSchemaLayer?} = self._pending
 			local isInitiator = false
 			local pendingSchemaTail : pendingSchemaTail
+			local success : boolean?, value : any?
+			local completed : boolean?
 	
 			for k, v in iterateSchema(schema) do
 				local nextPendingSchemaLayer = currentPendingSchemaLayer[k]
@@ -468,8 +472,6 @@ module.Get = function<T>(
 					pendingSchemaTail = {
 						pending = {},
 						initiator = coroutine.create(function()
-							local success : boolean, value : any
-
 							for i = 1, self._maxAttempts do
 								success, value = pcall(v)
 
@@ -478,6 +480,8 @@ module.Get = function<T>(
 								end
 							end
 			
+							completed = success
+
 							if type(value) == "table" then
 								value = {
 									value = value
@@ -501,13 +505,15 @@ module.Get = function<T>(
 			end
 			
 			if isInitiator then
-				task.defer(pendingSchemaTail.initiator)
+				task.spawn(pendingSchemaTail.initiator)
 			end
 			
-			table.insert(pendingSchemaTail.pending, coroutine.running())
+			if completed == nil then
+				table.insert(pendingSchemaTail.pending, coroutine.running())
 
-			local success : boolean, value : any = coroutine.yield()
-			
+				success, value = coroutine.yield()
+			end
+
 			if success then
 				return getValueFromSchemaTail(value)
 			else
