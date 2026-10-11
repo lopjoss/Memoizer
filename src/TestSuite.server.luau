@@ -1,6 +1,6 @@
 --!nonstrict
 
-local Memoizer = require("./Memoizer")
+local Memoizer = require("./memoizer")
 
 local passed = 0
 local failed = 0
@@ -210,7 +210,7 @@ local function test(name, callback, timeout)
 	end
 end
 
-print("[RUN] Memoizer extended suite: 40 tests")
+print("[RUN] Memoizer extended suite: 39 tests")
 
 -- A primitive value is fetched once and then served from the cache.
 test("number result caches once", function()
@@ -480,13 +480,13 @@ test("Record stores a deep empty table value", function()
 	expectSame(result, expected, "deep recorded empty table")
 end)
 
--- Many immediately completing workers must not lose their completion wake-up.
-test("50 immediate table completions", function()
+-- A long chain of immediate completions must finish without test-side yields.
+test("1000 immediate table completions without yielding", function()
 	local cache = Memoizer.new()
 	local calls = {}
 	local expected = {}
 
-	for index = 1, 50 do
+	for index = 1, 1000 do
 		calls[index] = 0
 		expected[index] = { id = index }
 
@@ -514,11 +514,11 @@ test("50 immediate table completions", function()
 	end
 end, 10)
 
--- Immediate failures clear pending state so the same path can retry.
-test("20 immediate errors can retry", function()
+-- A long chain of immediate failures and retries must finish without test-side yields.
+test("1000 immediate errors can retry without yielding", function()
 	local cache = Memoizer.new()
 
-	for index = 1, 20 do
+	for index = 1, 1000 do
 		local success, message = pcall(function()
 			cache:Get({
 				errors = {
@@ -1077,12 +1077,11 @@ test("erroring sibling does not disrupt successful sibling", function()
 	expectPendingEmpty(cache, "after mixed sibling completion")
 end, 7)
 
--- Record can replace a deferred worker before its callback begins.
-test("Record before deferred callback starts", function()
+-- An immediate fetch returns before a later Record replaces the cached value.
+test("Record after immediate completion replaces only cached value", function()
 	local cache = Memoizer.new()
-	local recorded = {
-		source = "early Record",
-	}
+	local callbackValue = { source = "callback" }
+	local recorded = { source = "later Record" }
 	local callbackCalls = 0
 	local completed = false
 	local result
@@ -1091,13 +1090,16 @@ test("Record before deferred callback starts", function()
 		result = cache:Get({
 			earlyRecord = function()
 				callbackCalls += 1
-				return {
-					source = "callback",
-				}
+				return callbackValue
 			end,
 		})
 		completed = true
 	end)
+
+	assert(completed, "immediate Get did not finish before Record")
+	expectEqual(callbackCalls, 1, "immediate callback count")
+	expectSame(result, callbackValue, "immediate caller result")
+	expectPendingEmpty(cache, "after immediate completion")
 
 	cache:Record({
 		earlyRecord = {
@@ -1105,68 +1107,15 @@ test("Record before deferred callback starts", function()
 		},
 	})
 
-	assert(waitFor(function()
-		return completed
-	end, 2), "early Record did not resolve caller")
-
-	task.wait()
-
-	expectEqual(callbackCalls, 0, "early canceled callback count")
-	expectSame(result, recorded, "early recorded result")
-	expectPendingEmpty(cache, "after early Record")
-end, 6)
-
--- BindableEvent resumes are deferred, so Record in the same turn must win.
-test("Record after gate Fire but before worker resumes", function()
-	local cache = Memoizer.new()
-	local gate = Instance.new("BindableEvent")
-	local started = false
-	local completed = false
-	local result
-	local workerValue = {
-		source = "worker",
-	}
-	local recordedValue = {
-		source = "same-turn Record",
-	}
-
-	task.spawn(function()
-		result = cache:Get({
-			fireThenRecord = function()
-				started = true
-				gate.Event:Wait()
-				return workerValue
-			end,
-		})
-		completed = true
-	end)
-
-	assert(waitFor(function()
-		return started
-	end, 2), "fire-then-Record worker did not start")
-
-	gate:Fire()
-	cache:Record({
-		fireThenRecord = {
-			value = recordedValue,
-		},
-	})
-
-	assert(waitFor(function()
-		return completed
-	end, 2), "fire-then-Record caller did not finish")
-
-	task.wait()
-	gate:Destroy()
-
-	expectSame(result, recordedValue, "fire-then-Record caller result")
+	expectSame(result, callbackValue, "later Record changed the caller result")
 	expectSame(cache:Get({
-		fireThenRecord = function()
-			error("fire-then-Record value was overwritten")
+		earlyRecord = function()
+			error("recorded callback ran")
 		end,
-	}), recordedValue, "fire-then-Record cached result")
-	expectPendingEmpty(cache, "after fire-then-Record")
-end, 7)
+	}), recorded, "later recorded cache value")
+	expectEqual(callbackCalls, 1, "callback count after Record")
+	expectPendingEmpty(cache, "after later Record")
+end, 6)
 
 -- A detached worker must finish and clean up even if every caller is canceled.
 test("all callers canceled still settles cache", function()
@@ -1307,11 +1256,6 @@ test("seeded sequential model fuzz", function()
 		end
 
 		expectPendingEmpty(cache, "model operation " .. operation)
-
-		-- Let completed deferred work unwind during long stress runs.
-		if operation % 20 == 0 then
-			task.wait()
-		end
 	end
 end, 25)
 
@@ -1761,12 +1705,6 @@ test("seeded cache ceiling model fuzz", function()
 	end
 
 	for operation = 1, operations do
-		-- Break long chains of immediately-completing task.defer calls so the
-		-- fuzz test exercises the cache rather than Roblox's re-entrancy guard.
-		if operation % 50 == 0 then
-			task.wait()
-		end
-
 		local key = random:NextInteger(1, 24)
 		local action = random:NextInteger(1, 10)
 
